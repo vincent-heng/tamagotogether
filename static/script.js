@@ -8,7 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
         playfulnessText: document.getElementById('playfulness-text'),
         playsCount: document.getElementById('plays-count'),
         playMessage: document.getElementById('play-message'),
-        playBtn: document.getElementById('play-btn')
+        playBtn: document.getElementById('play-btn'),
+        foxPlaceholder: document.querySelector('.fox-placeholder')
     };
 
     const getApiPath = (endpoint) => {
@@ -34,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Play section: only visible when happiness is at max (level 10)
         if (data.level_id === 10) {
             elements.playSection.classList.remove('hidden');
+            elements.foxPlaceholder.classList.add('rolling');
             elements.playfulnessText.textContent = data.playfulness_text;
             elements.playsCount.textContent = `A joué ${data.plays_today} fois aujourd'hui`;
 
@@ -46,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else {
             elements.playSection.classList.add('hidden');
+            elements.foxPlaceholder.classList.remove('rolling');
         }
 
         if (data.message) {

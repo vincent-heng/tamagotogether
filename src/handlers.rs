@@ -134,8 +134,10 @@ pub async fn play(
 
     let message = if new_playfulness == 10 && old_playfulness == 10 {
         "Tamagofox n'a plus envie de jouer mais joue quand même".to_string()
-    } else {
+    } else if new_playfulness != old_playfulness {
         format!("Tamagofox joue et devient {}", playfulness.as_text())
+    } else {
+        "Tamagofox joue".to_string()
     };
 
     Json(PlayResponse {
