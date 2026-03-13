@@ -63,7 +63,8 @@ async fn main() {
 
     let api_router = Router::new()
         .route("/state", get(handlers::get_status))
-        .route("/feed", post(handlers::feed));
+        .route("/feed", post(handlers::feed))
+        .route("/play", post(handlers::play));
 
     let app = Router::new()
         .nest("/api", api_router)

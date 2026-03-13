@@ -8,7 +8,7 @@ pub struct AppState {
     pub db: Arc<Db>,
 }
 
-/// Represents the mood/level of the Tamagotchi.
+/// Represents the mood/happiness level of the Tamagotchi (1-10).
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
 pub enum Mood {
     Abattu = 1,
@@ -24,7 +24,6 @@ pub enum Mood {
 }
 
 impl Mood {
-    /// Returns the French text representation of the mood.
     pub fn as_text(&self) -> &'static str {
         match self {
             Mood::Abattu => "abattu",
@@ -40,7 +39,6 @@ impl Mood {
         }
     }
 
-    /// Converts a level (1-10) to a Mood.
     pub fn from_level(level: i32) -> Self {
         match level {
             1 => Mood::Abattu,
@@ -54,11 +52,58 @@ impl Mood {
             9 => Mood::Euphorique,
             10 => Mood::Radieux,
             _ => {
-                if level < 1 {
-                    Mood::Abattu
-                } else {
-                    Mood::Radieux
-                }
+                if level < 1 { Mood::Abattu } else { Mood::Radieux }
+            }
+        }
+    }
+}
+
+/// Represents the playfulness level of the Tamagotchi (1-10).
+/// Increases by 1 every 3 total play interactions.
+#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
+pub enum Playfulness {
+    Ennuye = 1,
+    Indifferent = 2,
+    Distrait = 3,
+    Intrigue = 4,
+    Amuse = 5,
+    Enthousiaste = 6,
+    Passionne = 7,
+    Exalte = 8,
+    Hilare = 9,
+    Extatique = 10,
+}
+
+impl Playfulness {
+    pub fn as_text(&self) -> &'static str {
+        match self {
+            Playfulness::Ennuye => "ennuyé",
+            Playfulness::Indifferent => "indifférent",
+            Playfulness::Distrait => "distrait",
+            Playfulness::Intrigue => "intrigué",
+            Playfulness::Amuse => "amusé",
+            Playfulness::Enthousiaste => "enthousiaste",
+            Playfulness::Passionne => "passionné",
+            Playfulness::Exalte => "exalté",
+            Playfulness::Hilare => "hilare",
+            Playfulness::Extatique => "extatique",
+        }
+    }
+
+    pub fn from_level(level: i32) -> Self {
+        match level {
+            1 => Playfulness::Ennuye,
+            2 => Playfulness::Indifferent,
+            3 => Playfulness::Distrait,
+            4 => Playfulness::Intrigue,
+            5 => Playfulness::Amuse,
+            6 => Playfulness::Enthousiaste,
+            7 => Playfulness::Passionne,
+            8 => Playfulness::Exalte,
+            9 => Playfulness::Hilare,
+            10 => Playfulness::Extatique,
+            _ => {
+                if level < 1 { Playfulness::Ennuye } else { Playfulness::Extatique }
             }
         }
     }
@@ -71,6 +116,10 @@ pub struct StatusResponse {
     pub mood_text: String,
     pub has_fed_today: bool,
     pub feeds_today: i32,
+    pub can_play: bool,
+    pub player_plays_today: i32,
+    pub plays_today: i32,
+    pub playfulness_text: String,
 }
 
 /// API response for a feed action.
@@ -80,4 +129,13 @@ pub struct FeedResponse {
     pub level_id: i32,
     pub mood_text: String,
     pub feeds_today: i32,
+}
+
+/// API response for a play action.
+#[derive(Serialize)]
+pub struct PlayResponse {
+    pub message: String,
+    pub playfulness_text: String,
+    pub plays_today: i32,
+    pub player_plays_today: i32,
 }

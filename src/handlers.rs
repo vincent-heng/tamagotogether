@@ -5,7 +5,7 @@ use axum::{
     Json,
 };
 use std::net::SocketAddr;
-use crate::models::{AppState, StatusResponse, FeedResponse, Mood};
+use crate::models::{AppState, StatusResponse, FeedResponse, PlayResponse, Mood, Playfulness};
 
 /// Helper to extract client IP, considering proxies.
 fn get_client_ip(headers: &HeaderMap, addr: SocketAddr) -> String {
@@ -28,12 +28,22 @@ pub async fn get_status(
     let mood = Mood::from_level(level);
     let has_fed_today = state.db.has_fed_today(&ip).unwrap_or(false);
     let feeds_today = state.db.get_feed_count_today().unwrap_or(0);
-    
+
+    let player_plays_today = state.db.get_player_play_count_today(&ip).unwrap_or(0);
+    let plays_today = state.db.get_play_count_today().unwrap_or(0);
+    let playfulness_level = state.db.get_playfulness_level().unwrap_or(1);
+    let playfulness = Playfulness::from_level(playfulness_level);
+    let can_play = level == 10 && player_plays_today < 3;
+
     Json(StatusResponse {
         level_id: level,
         mood_text: mood.as_text().to_string(),
         has_fed_today,
         feeds_today,
+        can_play,
+        player_plays_today,
+        plays_today,
+        playfulness_text: playfulness.as_text().to_string(),
     })
 }
 
@@ -81,5 +91,57 @@ pub async fn feed(
         level_id: new_level,
         mood_text: mood.as_text().to_string(),
         feeds_today,
+    }).into_response()
+}
+
+/// POST /api/play
+pub async fn play(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+) -> impl IntoResponse {
+    let ip = get_client_ip(&headers, addr);
+
+    // Only allow playing when happiness is at max
+    let level = state.db.get_level().unwrap_or(5);
+    if level < 10 {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+
+    let player_plays = state.db.get_player_play_count_today(&ip).unwrap_or(0);
+    let old_playfulness = state.db.get_playfulness_level().unwrap_or(1);
+
+    // Player already used all 3 plays
+    if player_plays >= 3 {
+        let playfulness = Playfulness::from_level(old_playfulness);
+        let plays_today = state.db.get_play_count_today().unwrap_or(0);
+        return Json(PlayResponse {
+            message: "Tamagofox n'a plus envie de jouer mais joue quand même".to_string(),
+            playfulness_text: playfulness.as_text().to_string(),
+            plays_today,
+            player_plays_today: player_plays,
+        }).into_response();
+    }
+
+    let new_playfulness = match state.db.play(&ip) {
+        Ok(l) => l,
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    };
+
+    let playfulness = Playfulness::from_level(new_playfulness);
+    let plays_today = state.db.get_play_count_today().unwrap_or(0);
+    let player_plays_after = state.db.get_player_play_count_today(&ip).unwrap_or(0);
+
+    let message = if new_playfulness == 10 && old_playfulness == 10 {
+        "Tamagofox n'a plus envie de jouer mais joue quand même".to_string()
+    } else {
+        format!("Tamagofox joue et devient {}", playfulness.as_text())
+    };
+
+    Json(PlayResponse {
+        message,
+        playfulness_text: playfulness.as_text().to_string(),
+        plays_today,
+        player_plays_today: player_plays_after,
     }).into_response()
 }

@@ -4,6 +4,8 @@ use chrono::{Utc, Datelike};
 use std::sync::{Arc, Mutex};
 use sha2::{Sha256, Digest};
 
+const MAX_PLAYS_PER_PLAYER: i32 = 3;
+
 /// Database manager for Tamagotogether.
 pub struct Db {
     conn: Mutex<Connection>,
@@ -50,7 +52,6 @@ impl Db {
         let mut hasher = Sha256::new();
         hasher.update(date.as_bytes());
         let result = hasher.finalize();
-        // Use the first byte for modulo 5 + 1 (so 1 to 5)
         (result[0] as i32 % 5) + 1
     }
 
@@ -101,5 +102,58 @@ impl Db {
             params![today],
             |row| row.get(0),
         ).context("Failed to query feed count")
+    }
+
+    // --- Play feature ---
+
+    /// Returns how many times a specific player played today.
+    pub fn get_player_play_count_today(&self, ip: &str) -> Result<i32> {
+        let conn = self.conn.lock().map_err(|_| anyhow::anyhow!("Database lock poisoned"))?;
+        let today = Self::today_str();
+        let hashed_ip = Self::hash_ip(ip);
+        conn.query_row(
+            "SELECT COUNT(*) FROM actions WHERE ip = ?1 AND date = ?2 AND action = 'play'",
+            params![hashed_ip, today],
+            |row| row.get(0),
+        ).context("Failed to query player play count")
+    }
+
+    /// Returns the total number of play actions today.
+    pub fn get_play_count_today(&self) -> Result<i32> {
+        let conn = self.conn.lock().map_err(|_| anyhow::anyhow!("Database lock poisoned"))?;
+        let today = Self::today_str();
+        conn.query_row(
+            "SELECT COUNT(*) FROM actions WHERE date = ?1 AND action = 'play'",
+            params![today],
+            |row| row.get(0),
+        ).context("Failed to query play count")
+    }
+
+    /// Returns the current playfulness level (1-10), based on total plays today.
+    /// Increases by 1 every 3 plays, starting at level 1.
+    pub fn get_playfulness_level(&self) -> Result<i32> {
+        let count = self.get_play_count_today()?;
+        Ok(std::cmp::min(1 + count / 3, 10))
+    }
+
+    /// Registers a play action for the given IP. Max 3 per player per day.
+    /// Returns the new playfulness level.
+    pub fn play(&self, ip: &str) -> Result<i32> {
+        let player_count = self.get_player_play_count_today(ip)?;
+        if player_count >= MAX_PLAYS_PER_PLAYER {
+            return self.get_playfulness_level();
+        }
+
+        let today = Self::today_str();
+        let hashed_ip = Self::hash_ip(ip);
+        {
+            let conn = self.conn.lock().map_err(|_| anyhow::anyhow!("Database lock poisoned"))?;
+            conn.execute(
+                "INSERT INTO actions (ip, action, date) VALUES (?1, 'play', ?2)",
+                params![hashed_ip, today],
+            ).context("Failed to insert play action")?;
+        }
+
+        self.get_playfulness_level()
     }
 }

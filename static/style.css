@@ -137,3 +137,47 @@ button:disabled {
     box-shadow: none;
     transform: none;
 }
+
+.hidden {
+    display: none;
+}
+
+.play-section {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.play-section .status-box {
+    min-height: 80px;
+}
+
+#playfulness-text {
+    font-size: 1.8rem;
+    margin: 10px 0;
+    color: var(--success-color);
+    font-weight: 700;
+}
+
+#plays-count {
+    color: #636e72;
+    font-size: 1rem;
+}
+
+#play-message {
+    font-size: 1.1rem;
+    color: var(--success-color);
+    font-weight: 600;
+    margin-top: 10px;
+    min-height: 1.5em;
+    animation: fadeIn 0.5s ease;
+}
+
+#play-btn {
+    background: linear-gradient(to right, var(--success-color), #55efc4);
+    box-shadow: 0 4px 15px rgba(0, 184, 148, 0.3);
+}
+
+#play-btn:hover:not(:disabled) {
+    box-shadow: 0 6px 20px rgba(0, 184, 148, 0.4);
+}
