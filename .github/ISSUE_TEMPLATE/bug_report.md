@@ -27,5 +27,8 @@ If applicable, add screenshots or paste relevant terminal logs/console output he
 - **Version:** [e.g. v1.2.3 or commit hash]
 - **Browser (if applicable):** [e.g. Chrome 122]
 
+## 📌 Dependencies
+List any related issues or blocking bugs here (e.g., "Depends on #123").
+
 ## 📝 Additional Context
 Add any other context about the problem here.
