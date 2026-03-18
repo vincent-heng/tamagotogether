@@ -1,4 +1,42 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const translations = {
+        fr: {
+            feedBtn: "Nourrir",
+            playBtn: "Jouer",
+            alreadyFed: "Déjà nourri",
+            alreadyPlayed: "Déjà joué",
+            fedCount: (n) => `Nourri ${n} fois aujourd'hui`,
+            playedCount: (n) => `A joué ${n} fois aujourd'hui`,
+            loading: "Chargement...",
+            errorSync: "Erreur de connexion",
+            errorAction: "Erreur lors de l'action"
+        },
+        en: {
+            feedBtn: "Feed",
+            playBtn: "Play",
+            alreadyFed: "Already fed",
+            alreadyPlayed: "Already played",
+            fedCount: (n) => `Fed ${n} times today`,
+            playedCount: (n) => `Played ${n} times today`,
+            loading: "Loading...",
+            errorSync: "Connection error",
+            errorAction: "Action error"
+        },
+        de: {
+            feedBtn: "Füttern",
+            playBtn: "Spielen",
+            alreadyFed: "Schon gefüttert",
+            alreadyPlayed: "Schon gespielt",
+            fedCount: (n) => `${n} Mal gefüttert heute`,
+            playedCount: (n) => `${n} Mal gespielt heute`,
+            loading: "Laden...",
+            errorSync: "Verbindungsfehler",
+            errorAction: "Aktionsfehler"
+        }
+    };
+
+    let currentLang = localStorage.getItem('lang') || 'fr';
+
     const elements = {
         moodText: document.getElementById('mood-text'),
         feedsCount: document.getElementById('feeds-count'),
@@ -9,42 +47,47 @@ document.addEventListener('DOMContentLoaded', () => {
         playsCount: document.getElementById('plays-count'),
         playMessage: document.getElementById('play-message'),
         playBtn: document.getElementById('play-btn'),
-        foxPlaceholder: document.querySelector('.fox-placeholder')
+        foxPlaceholder: document.querySelector('.fox-placeholder'),
+        langSelect: document.getElementById('lang-select')
     };
+
+    elements.langSelect.value = currentLang;
+    elements.langSelect.addEventListener('change', (e) => {
+        currentLang = e.target.value;
+        localStorage.setItem('lang', currentLang);
+        fetchStatus();
+    });
 
     const getApiPath = (endpoint) => {
         const basePath = window.location.pathname.replace(/\/$/, '');
-        return `${basePath}/api/${endpoint}`;
+        return `${basePath}/api/${endpoint}?lang=${currentLang}`;
     };
 
-    /**
-     * Update the main UI with status data.
-     */
     const updateUI = (data) => {
+        const t = translations[currentLang];
         elements.moodText.textContent = data.mood_text;
-        elements.feedsCount.textContent = `Nourri ${data.feeds_today} fois aujourd'hui`;
+        elements.feedsCount.textContent = t.fedCount(data.feeds_today);
 
         if (data.has_fed_today) {
             elements.feedBtn.disabled = true;
-            elements.feedBtn.textContent = "Déjà nourri";
+            elements.feedBtn.textContent = t.alreadyFed;
         } else {
             elements.feedBtn.disabled = false;
-            elements.feedBtn.textContent = "Nourrir";
+            elements.feedBtn.textContent = t.feedBtn;
         }
 
-        // Play section: only visible when happiness is at max (level 10)
         if (data.level_id === 10) {
             elements.playSection.classList.remove('hidden');
             elements.foxPlaceholder.classList.add('rolling');
             elements.playfulnessText.textContent = data.playfulness_text;
-            elements.playsCount.textContent = `A joué ${data.plays_today} fois aujourd'hui`;
+            elements.playsCount.textContent = t.playedCount(data.plays_today);
 
             if (data.player_plays_today >= 3) {
                 elements.playBtn.disabled = true;
-                elements.playBtn.textContent = "Déjà joué";
+                elements.playBtn.textContent = t.alreadyPlayed;
             } else {
                 elements.playBtn.disabled = false;
-                elements.playBtn.textContent = "Jouer";
+                elements.playBtn.textContent = t.playBtn;
             }
         } else {
             elements.playSection.classList.add('hidden');
@@ -57,6 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const fetchStatus = async () => {
+        const t = translations[currentLang];
         try {
             const res = await fetch(getApiPath('state'));
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -64,26 +108,26 @@ document.addEventListener('DOMContentLoaded', () => {
             updateUI(data);
         } catch (error) {
             console.error("Error fetching state:", error);
-            elements.moodText.textContent = "Erreur de connexion";
+            elements.moodText.textContent = t.errorSync;
         }
     };
 
     const feedTamagotchi = async () => {
         if (elements.feedBtn.disabled) return;
         
+        const t = translations[currentLang];
         elements.feedBtn.disabled = true;
-        elements.feedBtn.textContent = "Chargement...";
+        elements.feedBtn.textContent = t.loading;
 
         try {
             const res = await fetch(getApiPath('feed'), { method: 'POST' });
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             const data = await res.json();
             updateUI(data);
-            // Re-fetch full status to update play section if level changed to 10
             fetchStatus();
         } catch (error) {
             console.error("Error feeding:", error);
-            elements.feedMessage.textContent = "Erreur lors de l'action";
+            elements.feedMessage.textContent = t.errorAction;
             elements.feedBtn.disabled = false;
         }
     };
@@ -91,8 +135,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const playWithTamagotchi = async () => {
         if (elements.playBtn.disabled) return;
 
+        const t = translations[currentLang];
         elements.playBtn.disabled = true;
-        elements.playBtn.textContent = "Chargement...";
+        elements.playBtn.textContent = t.loading;
 
         try {
             const res = await fetch(getApiPath('play'), { method: 'POST' });
@@ -100,19 +145,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
 
             elements.playfulnessText.textContent = data.playfulness_text;
-            elements.playsCount.textContent = `A joué ${data.plays_today} fois aujourd'hui`;
+            elements.playsCount.textContent = t.playedCount(data.plays_today);
             elements.playMessage.textContent = data.message;
 
             if (data.player_plays_today >= 3) {
                 elements.playBtn.disabled = true;
-                elements.playBtn.textContent = "Déjà joué";
+                elements.playBtn.textContent = t.alreadyPlayed;
             } else {
                 elements.playBtn.disabled = false;
-                elements.playBtn.textContent = "Jouer";
+                elements.playBtn.textContent = t.playBtn;
             }
         } catch (error) {
             console.error("Error playing:", error);
-            elements.playMessage.textContent = "Erreur lors de l'action";
+            elements.playMessage.textContent = t.errorAction;
             elements.playBtn.disabled = false;
         }
     };

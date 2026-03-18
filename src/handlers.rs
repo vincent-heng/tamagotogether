@@ -1,9 +1,10 @@
 use axum::{
-    extract::{State, ConnectInfo},
+    extract::{State, ConnectInfo, Query},
     http::{StatusCode, HeaderMap},
     response::IntoResponse,
     Json,
 };
+use std::collections::HashMap;
 use std::net::SocketAddr;
 use crate::models::{AppState, StatusResponse, FeedResponse, PlayResponse, Mood, Playfulness};
 
@@ -21,8 +22,10 @@ fn get_client_ip(headers: &HeaderMap, addr: SocketAddr) -> String {
 pub async fn get_status(
     State(state): State<AppState>,
     headers: HeaderMap,
+    Query(params): Query<HashMap<String, String>>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
 ) -> impl IntoResponse {
+    let lang = params.get("lang").map(|s| s.as_str()).unwrap_or("fr");
     let ip = get_client_ip(&headers, addr);
     let level = state.db.get_level().unwrap_or(5);
     let mood = Mood::from_level(level);
@@ -37,13 +40,13 @@ pub async fn get_status(
 
     Json(StatusResponse {
         level_id: level,
-        mood_text: mood.as_text().to_string(),
+        mood_text: mood.as_text(lang).to_string(),
         has_fed_today,
         feeds_today,
         can_play,
         player_plays_today,
         plays_today,
-        playfulness_text: playfulness.as_text().to_string(),
+        playfulness_text: playfulness.as_text(lang).to_string(),
     })
 }
 
@@ -51,8 +54,10 @@ pub async fn get_status(
 pub async fn feed(
     State(state): State<AppState>,
     headers: HeaderMap,
+    Query(params): Query<HashMap<String, String>>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
 ) -> impl IntoResponse {
+    let lang = params.get("lang").map(|s| s.as_str()).unwrap_or("fr");
     let ip = get_client_ip(&headers, addr);
     let has_fed = state.db.has_fed_today(&ip).unwrap_or(false);
     
@@ -60,12 +65,17 @@ pub async fn feed(
         let level = state.db.get_level().unwrap_or(5);
         let mood = Mood::from_level(level);
         let feeds_today = state.db.get_feed_count_today().unwrap_or(0);
+        let msg = match lang {
+            "en" => "Tamagofox is not hungry anymore but eats anyway",
+            "de" => "Tamagofox hat keinen Hunger mehr, isst aber trotzdem",
+            _ => "Tamagofox n'a plus faim mais mange quand même",
+        };
         return (
             StatusCode::OK,
             Json(FeedResponse {
-                message: "Tamagofox n'a plus faim mais mange quand même".to_string(),
+                message: msg.to_string(),
                 level_id: level,
-                mood_text: mood.as_text().to_string(),
+                mood_text: mood.as_text(lang).to_string(),
                 feeds_today,
             }),
         ).into_response();
@@ -79,9 +89,17 @@ pub async fn feed(
     
     let mood = Mood::from_level(new_level);
     let message = if new_level == 10 && old_level == 10 {
-        "Tamagofox n'a plus faim mais mange quand même".to_string()
+        match lang {
+            "en" => "Tamagofox is not hungry anymore but eats anyway".to_string(),
+            "de" => "Tamagofox hat keinen Hunger mehr, isst aber trotzdem".to_string(),
+            _ => "Tamagofox n'a plus faim mais mange quand même".to_string(),
+        }
     } else {
-        format!("Tamagofox mange et devient {}", mood.as_text())
+        match lang {
+            "en" => format!("Tamagofox eats and becomes {}", mood.as_text(lang)),
+            "de" => format!("Tamagofox isst und wird {}", mood.as_text(lang)),
+            _ => format!("Tamagofox mange et devient {}", mood.as_text(lang)),
+        }
     };
 
     let feeds_today = state.db.get_feed_count_today().unwrap_or(0);
@@ -89,7 +107,7 @@ pub async fn feed(
     Json(FeedResponse {
         message,
         level_id: new_level,
-        mood_text: mood.as_text().to_string(),
+        mood_text: mood.as_text(lang).to_string(),
         feeds_today,
     }).into_response()
 }
@@ -98,8 +116,10 @@ pub async fn feed(
 pub async fn play(
     State(state): State<AppState>,
     headers: HeaderMap,
+    Query(params): Query<HashMap<String, String>>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
 ) -> impl IntoResponse {
+    let lang = params.get("lang").map(|s| s.as_str()).unwrap_or("fr");
     let ip = get_client_ip(&headers, addr);
 
     // Only allow playing when happiness is at max
@@ -115,9 +135,14 @@ pub async fn play(
     if player_plays >= 3 {
         let playfulness = Playfulness::from_level(old_playfulness);
         let plays_today = state.db.get_play_count_today().unwrap_or(0);
+        let msg = match lang {
+            "en" => "Tamagofox doesn't want to play anymore but plays anyway",
+            "de" => "Tamagofox möchte nicht mehr spielen, spielt aber trotzdem",
+            _ => "Tamagofox n'a plus envie de jouer mais joue quand même",
+        };
         return Json(PlayResponse {
-            message: "Tamagofox n'a plus envie de jouer mais joue quand même".to_string(),
-            playfulness_text: playfulness.as_text().to_string(),
+            message: msg.to_string(),
+            playfulness_text: playfulness.as_text(lang).to_string(),
             plays_today,
             player_plays_today: player_plays,
         }).into_response();
@@ -133,16 +158,28 @@ pub async fn play(
     let player_plays_after = state.db.get_player_play_count_today(&ip).unwrap_or(0);
 
     let message = if new_playfulness == 10 && old_playfulness == 10 {
-        "Tamagofox n'a plus envie de jouer mais joue quand même".to_string()
+        match lang {
+            "en" => "Tamagofox doesn't want to play anymore but plays anyway".to_string(),
+            "de" => "Tamagofox möchte nicht mehr spielen, spielt aber trotzdem".to_string(),
+            _ => "Tamagofox n'a plus envie de jouer mais joue quand même".to_string(),
+        }
     } else if new_playfulness != old_playfulness {
-        format!("Tamagofox joue et devient {}", playfulness.as_text())
+        match lang {
+            "en" => format!("Tamagofox plays and becomes {}", playfulness.as_text(lang)),
+            "de" => format!("Tamagofox spielt und wird {}", playfulness.as_text(lang)),
+            _ => format!("Tamagofox joue et devient {}", playfulness.as_text(lang)),
+        }
     } else {
-        "Tamagofox joue".to_string()
+        match lang {
+            "en" => "Tamagofox plays".to_string(),
+            "de" => "Tamagofox spielt".to_string(),
+            _ => "Tamagofox joue".to_string(),
+        }
     };
 
     Json(PlayResponse {
         message,
-        playfulness_text: playfulness.as_text().to_string(),
+        playfulness_text: playfulness.as_text(lang).to_string(),
         plays_today,
         player_plays_today: player_plays_after,
     }).into_response()
