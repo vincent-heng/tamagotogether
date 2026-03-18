@@ -157,3 +157,61 @@ impl Db {
         self.get_playfulness_level()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_db_initialization() {
+        let db = Db::new(":memory:").expect("Failed to create in-memory db");
+        assert_eq!(db.get_feed_count_today().unwrap(), 0);
+        assert_eq!(db.get_play_count_today().unwrap(), 0);
+    }
+
+    #[test]
+    fn test_feed() {
+        let db = Db::new(":memory:").unwrap();
+        let initial_level = db.get_level().unwrap();
+        
+        let level1 = db.feed("192.168.1.1").unwrap();
+        assert_eq!(db.get_feed_count_today().unwrap(), 1);
+        assert_eq!(db.has_fed_today("192.168.1.1").unwrap(), true);
+        assert_eq!(level1, std::cmp::min(initial_level + 1, 10));
+        
+        // Feeding again from same IP should not increase count
+        let level2 = db.feed("192.168.1.1").unwrap();
+        assert_eq!(db.get_feed_count_today().unwrap(), 1);
+        assert_eq!(level1, level2);
+    }
+
+    #[test]
+    fn test_play() {
+        let db = Db::new(":memory:").unwrap();
+        let ip = "10.0.0.1";
+        
+        // Initial playfulness level: 1 + 0/3 = 1
+        assert_eq!(db.get_playfulness_level().unwrap(), 1);
+
+        // 1st play
+        let p_level1 = db.play(ip).unwrap();
+        assert_eq!(db.get_play_count_today().unwrap(), 1);
+        assert_eq!(db.get_player_play_count_today(ip).unwrap(), 1);
+        assert_eq!(p_level1, 1);
+
+        // 2nd play
+        db.play(ip).unwrap();
+        
+        // 3rd play
+        let p_level3 = db.play(ip).unwrap();
+        assert_eq!(db.get_player_play_count_today(ip).unwrap(), 3);
+        assert_eq!(db.get_play_count_today().unwrap(), 3);
+        assert_eq!(p_level3, 2); // 1 + 3/3 = 2
+
+        // 4th play ignored
+        let p_level4 = db.play(ip).unwrap();
+        assert_eq!(db.get_player_play_count_today(ip).unwrap(), 3);
+        assert_eq!(db.get_play_count_today().unwrap(), 3);
+        assert_eq!(p_level4, 2);
+    }
+}

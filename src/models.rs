@@ -139,3 +139,40 @@ pub struct PlayResponse {
     pub plays_today: i32,
     pub player_plays_today: i32,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_mood_as_text() {
+        assert_eq!(Mood::Abattu.as_text(), "abattu");
+        assert_eq!(Mood::Neutre.as_text(), "neutre");
+        assert_eq!(Mood::Radieux.as_text(), "radieux");
+    }
+
+    #[test]
+    fn test_mood_from_level() {
+        assert_eq!(Mood::from_level(1), Mood::Abattu);
+        assert_eq!(Mood::from_level(5), Mood::Neutre);
+        assert_eq!(Mood::from_level(10), Mood::Radieux);
+        assert_eq!(Mood::from_level(-5), Mood::Abattu);
+        assert_eq!(Mood::from_level(15), Mood::Radieux);
+    }
+
+    #[test]
+    fn test_playfulness_as_text() {
+        assert_eq!(Playfulness::Ennuye.as_text(), "ennuyé");
+        assert_eq!(Playfulness::Amuse.as_text(), "amusé");
+        assert_eq!(Playfulness::Extatique.as_text(), "extatique");
+    }
+
+    #[test]
+    fn test_playfulness_from_level() {
+        assert_eq!(Playfulness::from_level(1), Playfulness::Ennuye);
+        assert_eq!(Playfulness::from_level(5), Playfulness::Amuse);
+        assert_eq!(Playfulness::from_level(10), Playfulness::Extatique);
+        assert_eq!(Playfulness::from_level(0), Playfulness::Ennuye);
+        assert_eq!(Playfulness::from_level(99), Playfulness::Extatique);
+    }
+}
