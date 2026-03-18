@@ -44,6 +44,7 @@ pub async fn get_status(
         player_plays_today,
         plays_today,
         playfulness_text: playfulness.as_text().to_string(),
+        playfulness_level,
     })
 }
 
@@ -118,6 +119,7 @@ pub async fn play(
         return Json(PlayResponse {
             message: "Tamagofox n'a plus envie de jouer mais joue quand même".to_string(),
             playfulness_text: playfulness.as_text().to_string(),
+            playfulness_level: old_playfulness,
             plays_today,
             player_plays_today: player_plays,
         }).into_response();
@@ -143,6 +145,7 @@ pub async fn play(
     Json(PlayResponse {
         message,
         playfulness_text: playfulness.as_text().to_string(),
+        playfulness_level: new_playfulness,
         plays_today,
         player_plays_today: player_plays_after,
     }).into_response()

@@ -120,6 +120,7 @@ pub struct StatusResponse {
     pub player_plays_today: i32,
     pub plays_today: i32,
     pub playfulness_text: String,
+    pub playfulness_level: i32,
 }
 
 /// API response for a feed action.
@@ -136,6 +137,7 @@ pub struct FeedResponse {
 pub struct PlayResponse {
     pub message: String,
     pub playfulness_text: String,
+    pub playfulness_level: i32,
     pub plays_today: i32,
     pub player_plays_today: i32,
 }
@@ -174,5 +176,21 @@ mod tests {
         assert_eq!(Playfulness::from_level(10), Playfulness::Extatique);
         assert_eq!(Playfulness::from_level(0), Playfulness::Ennuye);
         assert_eq!(Playfulness::from_level(99), Playfulness::Extatique);
+    }
+
+    #[test]
+    fn test_status_response_contains_playfulness_level() {
+        let response = StatusResponse {
+            level_id: 10,
+            mood_text: "radieux".to_string(),
+            has_fed_today: true,
+            feeds_today: 1,
+            can_play: true,
+            player_plays_today: 1,
+            plays_today: 1,
+            playfulness_text: "amusé".to_string(),
+            playfulness_level: 5,
+        };
+        assert_eq!(response.playfulness_level, 5);
     }
 }

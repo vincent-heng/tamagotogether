@@ -17,6 +17,40 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${basePath}/api/${endpoint}`;
     };
 
+    const updateVisuals = (data) => {
+        const fox = elements.foxPlaceholder;
+        
+        fox.className = 'fox-placeholder';
+        
+        let emoji = '🦊';
+        if (data.level_id <= 3) {
+            fox.classList.add('mood-sad');
+            emoji = '😿';
+        } else if (data.level_id <= 6) {
+            fox.classList.add('mood-neutral');
+        } else if (data.level_id < 10) {
+            fox.classList.add('mood-happy');
+            emoji = '😊🦊';
+        } else {
+            fox.classList.add('mood-radiant');
+            emoji = '✨🦊✨';
+        }
+        
+        let animClass = 'anim-floating';
+        if (data.level_id === 10) {
+            const playfulness = data.playfulness_level || 1;
+            if (playfulness <= 4) {
+                animClass = 'anim-breathing';
+            } else if (playfulness <= 8) {
+                animClass = 'anim-bouncing';
+            } else {
+                animClass = 'anim-hilarious';
+            }
+        }
+        fox.classList.add(animClass);
+        fox.textContent = emoji;
+    };
+
     /**
      * Update the main UI with status data.
      */
@@ -54,6 +88,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.message) {
             elements.feedMessage.textContent = data.message;
         }
+        
+        updateVisuals(data);
     };
 
     const fetchStatus = async () => {
@@ -110,6 +146,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.playBtn.disabled = false;
                 elements.playBtn.textContent = "Jouer";
             }
+            
+            updateVisuals(data);
         } catch (error) {
             console.error("Error playing:", error);
             elements.playMessage.textContent = "Erreur lors de l'action";

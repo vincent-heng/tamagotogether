@@ -194,3 +194,46 @@ button:disabled {
 #play-btn:hover:not(:disabled) {
     box-shadow: 0 6px 20px rgba(0, 184, 148, 0.4);
 }
+
+/* Visual Variants added for Issue #7 */
+.mood-sad {
+    filter: grayscale(100%) drop-shadow(0 5px 15px rgba(0,0,0,0.1));
+}
+.mood-neutral {
+    filter: drop-shadow(0 5px 15px rgba(0,0,0,0.1));
+}
+.mood-happy {
+    filter: drop-shadow(0 5px 15px rgba(253, 121, 168, 0.4));
+}
+.mood-radiant {
+    filter: drop-shadow(0 0 25px gold);
+    transform: scale(1.1);
+}
+
+.anim-floating {
+    animation: floating 3s infinite ease-in-out;
+}
+.anim-breathing {
+    animation: breathing 4s infinite ease-in-out;
+}
+@keyframes breathing {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.anim-bouncing {
+    animation: bouncing 1s infinite cubic-bezier(0.28, 0.84, 0.42, 1);
+}
+@keyframes bouncing {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
+
+.anim-hilarious {
+    animation: hilarious 0.5s infinite;
+}
+@keyframes hilarious {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-15px) rotate(15deg); }
+    75% { transform: translateY(-15px) rotate(-15deg); }
+}
