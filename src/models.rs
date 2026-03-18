@@ -24,18 +24,44 @@ pub enum Mood {
 }
 
 impl Mood {
-    pub fn as_text(&self) -> &'static str {
-        match self {
-            Mood::Abattu => "abattu",
-            Mood::Chagrine => "chagriné",
-            Mood::Deprime => "déprimé",
-            Mood::Triste => "triste",
-            Mood::Neutre => "neutre",
-            Mood::Content => "content",
-            Mood::Heureux => "heureux",
-            Mood::EnPleineForme => "en pleine forme",
-            Mood::Euphorique => "euphorique",
-            Mood::Radieux => "radieux",
+    pub fn as_text(&self, lang: &str) -> &'static str {
+        match lang {
+            "en" => match self {
+                Mood::Abattu => "dejected",
+                Mood::Chagrine => "sorrowful",
+                Mood::Deprime => "depressed",
+                Mood::Triste => "sad",
+                Mood::Neutre => "neutral",
+                Mood::Content => "content",
+                Mood::Heureux => "happy",
+                Mood::EnPleineForme => "in great shape",
+                Mood::Euphorique => "euphoric",
+                Mood::Radieux => "radiant",
+            },
+            "de" => match self {
+                Mood::Abattu => "niedergeschlagen",
+                Mood::Chagrine => "bekümmert",
+                Mood::Deprime => "deprimiert",
+                Mood::Triste => "traurig",
+                Mood::Neutre => "neutral",
+                Mood::Content => "zufrieden",
+                Mood::Heureux => "glücklich",
+                Mood::EnPleineForme => "in Bestform",
+                Mood::Euphorique => "euphorisch",
+                Mood::Radieux => "strahlend",
+            },
+            _ => match self {
+                Mood::Abattu => "abattu",
+                Mood::Chagrine => "chagriné",
+                Mood::Deprime => "déprimé",
+                Mood::Triste => "triste",
+                Mood::Neutre => "neutre",
+                Mood::Content => "content",
+                Mood::Heureux => "heureux",
+                Mood::EnPleineForme => "en pleine forme",
+                Mood::Euphorique => "euphorique",
+                Mood::Radieux => "radieux",
+            }
         }
     }
 
@@ -75,18 +101,44 @@ pub enum Playfulness {
 }
 
 impl Playfulness {
-    pub fn as_text(&self) -> &'static str {
-        match self {
-            Playfulness::Ennuye => "ennuyé",
-            Playfulness::Indifferent => "indifférent",
-            Playfulness::Distrait => "distrait",
-            Playfulness::Intrigue => "intrigué",
-            Playfulness::Amuse => "amusé",
-            Playfulness::Enthousiaste => "enthousiaste",
-            Playfulness::Passionne => "passionné",
-            Playfulness::Exalte => "exalté",
-            Playfulness::Hilare => "hilare",
-            Playfulness::Extatique => "extatique",
+    pub fn as_text(&self, lang: &str) -> &'static str {
+        match lang {
+            "en" => match self {
+                Playfulness::Ennuye => "bored",
+                Playfulness::Indifferent => "indifferent",
+                Playfulness::Distrait => "distracted",
+                Playfulness::Intrigue => "intrigued",
+                Playfulness::Amuse => "amused",
+                Playfulness::Enthousiaste => "enthusiastic",
+                Playfulness::Passionne => "passionate",
+                Playfulness::Exalte => "elated",
+                Playfulness::Hilare => "hilarious",
+                Playfulness::Extatique => "ecstatic",
+            },
+            "de" => match self {
+                Playfulness::Ennuye => "gelangweilt",
+                Playfulness::Indifferent => "gleichgültig",
+                Playfulness::Distrait => "abgelenkt",
+                Playfulness::Intrigue => "fasziniert",
+                Playfulness::Amuse => "amüsiert",
+                Playfulness::Enthousiaste => "enthusiastisch",
+                Playfulness::Passionne => "leidenschaftlich",
+                Playfulness::Exalte => "begeistert",
+                Playfulness::Hilare => "urkomisch",
+                Playfulness::Extatique => "ekstatisch",
+            },
+            _ => match self {
+                Playfulness::Ennuye => "ennuyé",
+                Playfulness::Indifferent => "indifférent",
+                Playfulness::Distrait => "distrait",
+                Playfulness::Intrigue => "intrigué",
+                Playfulness::Amuse => "amusé",
+                Playfulness::Enthousiaste => "enthousiaste",
+                Playfulness::Passionne => "passionné",
+                Playfulness::Exalte => "exalté",
+                Playfulness::Hilare => "hilare",
+                Playfulness::Extatique => "extatique",
+            }
         }
     }
 
@@ -148,9 +200,9 @@ mod tests {
 
     #[test]
     fn test_mood_as_text() {
-        assert_eq!(Mood::Abattu.as_text(), "abattu");
-        assert_eq!(Mood::Neutre.as_text(), "neutre");
-        assert_eq!(Mood::Radieux.as_text(), "radieux");
+        assert_eq!(Mood::Abattu.as_text("fr"), "abattu");
+        assert_eq!(Mood::Neutre.as_text("en"), "neutral");
+        assert_eq!(Mood::Radieux.as_text("de"), "strahlend");
     }
 
     #[test]
@@ -164,9 +216,9 @@ mod tests {
 
     #[test]
     fn test_playfulness_as_text() {
-        assert_eq!(Playfulness::Ennuye.as_text(), "ennuyé");
-        assert_eq!(Playfulness::Amuse.as_text(), "amusé");
-        assert_eq!(Playfulness::Extatique.as_text(), "extatique");
+        assert_eq!(Playfulness::Ennuye.as_text("fr"), "ennuyé");
+        assert_eq!(Playfulness::Amuse.as_text("en"), "amused");
+        assert_eq!(Playfulness::Extatique.as_text("de"), "ekstatisch");
     }
 
     #[test]
