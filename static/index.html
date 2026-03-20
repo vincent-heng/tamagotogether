@@ -7,6 +7,14 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="auth-header" style="position: absolute; top: 1rem; right: 1rem; display: flex; align-items: center; gap: 1rem;">
+        <div id="user-info" class="hidden" style="display: flex; align-items: center; gap: 0.5rem;">
+            <img id="user-avatar" src="" style="width: 32px; height: 32px; border-radius: 50%;">
+            <span id="user-name" style="font-weight: 600;"></span>
+        </div>
+        <a id="login-btn" href="/api/auth/discord/login" style="background: #5865F2; color: white; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; font-weight: 600; font-size: 0.9rem;">Login with Discord</a>
+    </div>
+
     <div class="container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
             <h1 style="margin-bottom: 0;">Tamagofox</h1>

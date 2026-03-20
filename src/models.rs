@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use crate::db::Db;
 
@@ -6,6 +6,22 @@ use crate::db::Db;
 #[derive(Clone)]
 pub struct AppState {
     pub db: Arc<Db>,
+    pub discord_config: Option<DiscordConfig>,
+}
+
+#[derive(Clone)]
+pub struct DiscordConfig {
+    pub client_id: String,
+    pub client_secret: String,
+    pub redirect_url: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct User {
+    pub id: String,
+    pub username: String,
+    pub discriminator: Option<String>,
+    pub avatar: Option<String>,
 }
 
 /// Represents the mood/happiness level of the Tamagotchi (1-10).
