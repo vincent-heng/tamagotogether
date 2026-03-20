@@ -52,7 +52,14 @@ document.addEventListener('DOMContentLoaded', () => {
         userInfo: document.getElementById('user-info'),
         userName: document.getElementById('user-name'),
         userAvatar: document.getElementById('user-avatar'),
-        loginBtn: document.getElementById('login-btn')
+        loginBtn: document.getElementById('login-btn'),
+        userCoins: document.getElementById('user-coins')
+    };
+
+    const updateCoins = (coins) => {
+        if (coins !== undefined && coins !== null) {
+            elements.userCoins.textContent = coins;
+        }
     };
 
     const checkAuth = async () => {
@@ -61,6 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (res.ok) {
                 const user = await res.json();
                 elements.userName.textContent = user.username;
+                updateCoins(user.coins);
                 if (user.avatar) {
                     elements.userAvatar.src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
                 } else {
@@ -157,6 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.feedMessage.textContent = data.message;
         }
         
+        updateCoins(data.user_coins);
         updateVisuals(data);
     };
 

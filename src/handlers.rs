@@ -190,6 +190,7 @@ pub async fn get_status(
         plays_today,
         playfulness_text: playfulness.as_text(lang).to_string(),
         playfulness_level,
+        user_coins: user.map(|u| u.coins),
     })
 }
 
@@ -225,6 +226,7 @@ pub async fn feed(
                 level_id: level,
                 mood_text: mood.as_text(lang).to_string(),
                 feeds_today,
+                user_coins: user.map(|u| u.coins),
             }),
         ).into_response();
     }
@@ -234,6 +236,9 @@ pub async fn feed(
         Ok(l) => l,
         Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     };
+    
+    // Refresh user to get new coins
+    let user = session_id.and_then(|id| state.db.get_user_by_session(&id).ok().flatten());
     
     let mood = Mood::from_level(new_level);
     let message = if new_level == 10 && old_level == 10 {
@@ -257,6 +262,7 @@ pub async fn feed(
         level_id: new_level,
         mood_text: mood.as_text(lang).to_string(),
         feeds_today,
+        user_coins: user.map(|u| u.coins),
     }).into_response()
 }
 
@@ -298,6 +304,7 @@ pub async fn play(
             playfulness_level: old_playfulness,
             plays_today,
             player_plays_today: player_plays,
+            user_coins: user.map(|u| u.coins),
         }).into_response();
     }
 
@@ -305,6 +312,9 @@ pub async fn play(
         Ok(l) => l,
         Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     };
+
+    // Refresh user to get new coins
+    let user = session_id.and_then(|id| state.db.get_user_by_session(&id).ok().flatten());
 
     let playfulness = Playfulness::from_level(new_playfulness);
     let plays_today = state.db.get_play_count_today().unwrap_or(0);
@@ -336,5 +346,6 @@ pub async fn play(
         playfulness_level: new_playfulness,
         plays_today,
         player_plays_today: player_plays_after,
+        user_coins: user.map(|u| u.coins),
     }).into_response()
 }

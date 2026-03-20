@@ -34,7 +34,8 @@ impl Db {
                 id TEXT PRIMARY KEY,
                 username TEXT NOT NULL,
                 discriminator TEXT,
-                avatar TEXT
+                avatar TEXT,
+                coins INTEGER DEFAULT 0
             )",
             [],
         ).context("Failed to create users table")?;
@@ -61,7 +62,12 @@ impl Db {
         let conn = self.conn.lock().map_err(|_| anyhow::anyhow!("Database lock poisoned"))?;
         
         conn.execute(
-            "INSERT OR REPLACE INTO users (id, username, discriminator, avatar) VALUES (?1, ?2, ?3, ?4)",
+            "INSERT INTO users (id, username, discriminator, avatar, coins) 
+             VALUES (?1, ?2, ?3, ?4, 0)
+             ON CONFLICT(id) DO UPDATE SET 
+                username = excluded.username,
+                discriminator = excluded.discriminator,
+                avatar = excluded.avatar",
             params![user.id, user.username, user.discriminator, user.avatar],
         ).context("Failed to upsert user")?;
 
@@ -77,7 +83,7 @@ impl Db {
     pub fn get_user_by_session(&self, session_id: &str) -> Result<Option<User>> {
         let conn = self.conn.lock().map_err(|_| anyhow::anyhow!("Database lock poisoned"))?;
         let mut stmt = conn.prepare(
-            "SELECT u.id, u.username, u.discriminator, u.avatar 
+            "SELECT u.id, u.username, u.discriminator, u.avatar, u.coins 
              FROM users u 
              JOIN sessions s ON u.id = s.user_id 
              WHERE s.id = ?1"
@@ -89,6 +95,7 @@ impl Db {
                 username: row.get(1)?,
                 discriminator: row.get(2)?,
                 avatar: row.get(3)?,
+                coins: row.get(4)?,
             })
         });
 
@@ -161,6 +168,13 @@ impl Db {
                 "INSERT INTO actions (ip, user_id, action, date) VALUES (?1, ?2, 'feed', ?3)",
                 params![hashed_ip, user_id, today],
             ).context("Failed to insert feed action")?;
+
+            if let Some(uid) = user_id {
+                conn.execute(
+                    "UPDATE users SET coins = coins + 2 WHERE id = ?1",
+                    params![uid],
+                ).context("Failed to award coins for feeding")?;
+            }
         }
         
         self.get_level()
@@ -203,6 +217,13 @@ impl Db {
                 "INSERT INTO actions (ip, user_id, action, date) VALUES (?1, ?2, 'play', ?3)",
                 params![hashed_ip, user_id, today],
             ).context("Failed to insert play action")?;
+
+            if let Some(uid) = user_id {
+                conn.execute(
+                    "UPDATE users SET coins = coins + 3 WHERE id = ?1",
+                    params![uid],
+                ).context("Failed to award coins for playing")?;
+            }
         }
 
         self.get_playfulness_level()
@@ -254,13 +275,13 @@ mod tests {
         let db = Db::new(":memory:").unwrap();
         let initial_level = db.get_level().unwrap();
         
-        let level1 = db.feed("192.168.1.1").unwrap();
+        let level1 = db.feed("192.168.1.1", None).unwrap();
         assert_eq!(db.get_feed_count_today().unwrap(), 1);
-        assert_eq!(db.has_fed_today("192.168.1.1").unwrap(), true);
+        assert_eq!(db.has_fed_today("192.168.1.1", None).unwrap(), true);
         assert_eq!(level1, std::cmp::min(initial_level + 1, 10));
         
         // Feeding again from same IP should not increase count
-        let level2 = db.feed("192.168.1.1").unwrap();
+        let level2 = db.feed("192.168.1.1", None).unwrap();
         assert_eq!(db.get_feed_count_today().unwrap(), 1);
         assert_eq!(level1, level2);
     }
@@ -274,23 +295,23 @@ mod tests {
         assert_eq!(db.get_playfulness_level().unwrap(), 1);
 
         // 1st play
-        let p_level1 = db.play(ip).unwrap();
+        let p_level1 = db.play(ip, None).unwrap();
         assert_eq!(db.get_play_count_today().unwrap(), 1);
-        assert_eq!(db.get_player_play_count_today(ip).unwrap(), 1);
+        assert_eq!(db.get_player_play_count_today(ip, None).unwrap(), 1);
         assert_eq!(p_level1, 1);
 
         // 2nd play
-        db.play(ip).unwrap();
+        db.play(ip, None).unwrap();
         
         // 3rd play
-        let p_level3 = db.play(ip).unwrap();
-        assert_eq!(db.get_player_play_count_today(ip).unwrap(), 3);
+        let p_level3 = db.play(ip, None).unwrap();
+        assert_eq!(db.get_player_play_count_today(ip, None).unwrap(), 3);
         assert_eq!(db.get_play_count_today().unwrap(), 3);
         assert_eq!(p_level3, 2); // 1 + 3/3 = 2
 
         // 4th play ignored
-        let p_level4 = db.play(ip).unwrap();
-        assert_eq!(db.get_player_play_count_today(ip).unwrap(), 3);
+        let p_level4 = db.play(ip, None).unwrap();
+        assert_eq!(db.get_player_play_count_today(ip, None).unwrap(), 3);
         assert_eq!(db.get_play_count_today().unwrap(), 3);
         assert_eq!(p_level4, 2);
     }
