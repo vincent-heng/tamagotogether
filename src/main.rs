@@ -14,7 +14,7 @@ mod handlers;
 mod models;
 
 use db::Db;
-use models::AppState;
+use models::{AppState, DiscordConfig};
 
 #[derive(RustEmbed)]
 #[folder = "static/"]
@@ -59,12 +59,30 @@ async fn main() {
     let db_path = std::env::var("DATABASE_URL").unwrap_or_else(|_| "tamagotogether.db".to_string());
     let db = Db::new(&db_path).expect("Failed to initialize database");
 
-    let state = AppState { db };
+    let discord_config = if let (Ok(client_id), Ok(client_secret), Ok(redirect_url)) = (
+        std::env::var("DISCORD_CLIENT_ID"),
+        std::env::var("DISCORD_CLIENT_SECRET"),
+        std::env::var("DISCORD_REDIRECT_URL"),
+    ) {
+        Some(DiscordConfig {
+            client_id,
+            client_secret,
+            redirect_url,
+        })
+    } else {
+        tracing::warn!("Discord authentication environment variables not fully set. Discord login will be disabled.");
+        None
+    };
+
+    let state = AppState { db, discord_config };
 
     let api_router = Router::new()
         .route("/state", get(handlers::get_status))
         .route("/feed", post(handlers::feed))
-        .route("/play", post(handlers::play));
+        .route("/play", post(handlers::play))
+        .route("/auth/discord/login", get(handlers::discord_login))
+        .route("/auth/discord/callback", get(handlers::discord_callback))
+        .route("/auth/me", get(handlers::get_current_user));
 
     let app = Router::new()
         .nest("/api", api_router)

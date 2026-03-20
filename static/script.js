@@ -48,7 +48,41 @@ document.addEventListener('DOMContentLoaded', () => {
         playMessage: document.getElementById('play-message'),
         playBtn: document.getElementById('play-btn'),
         foxPlaceholder: document.querySelector('.fox-placeholder'),
-        langSelect: document.getElementById('lang-select')
+        langSelect: document.getElementById('lang-select'),
+        userInfo: document.getElementById('user-info'),
+        userName: document.getElementById('user-name'),
+        userAvatar: document.getElementById('user-avatar'),
+        loginBtn: document.getElementById('login-btn'),
+        userCoins: document.getElementById('user-coins')
+    };
+
+    const updateCoins = (coins) => {
+        if (coins !== undefined && coins !== null) {
+            elements.userCoins.textContent = coins;
+        }
+    };
+
+    const checkAuth = async () => {
+        try {
+            const res = await fetch('/api/auth/me');
+            if (res.ok) {
+                const user = await res.json();
+                elements.userName.textContent = user.username;
+                updateCoins(user.coins);
+                if (user.avatar) {
+                    elements.userAvatar.src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+                } else {
+                    elements.userAvatar.src = 'https://cdn.discordapp.com/embed/avatars/0.png';
+                }
+                elements.userInfo.classList.remove('hidden');
+                elements.loginBtn.classList.add('hidden');
+            } else {
+                elements.userInfo.classList.add('hidden');
+                elements.loginBtn.classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error("Auth check failed:", error);
+        }
     };
 
     elements.langSelect.value = currentLang;
@@ -131,6 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.feedMessage.textContent = data.message;
         }
         
+        updateCoins(data.user_coins);
         updateVisuals(data);
     };
 
@@ -202,5 +237,6 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.feedBtn.addEventListener('click', feedTamagotchi);
     elements.playBtn.addEventListener('click', playWithTamagotchi);
     
+    checkAuth();
     fetchStatus();
 });
